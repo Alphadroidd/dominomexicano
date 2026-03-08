@@ -91,14 +91,18 @@ input:disabled{opacity:.3;cursor:not-allowed}
 .piece-total-bar{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .piece-total-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .piece-total-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--accent)}
-.pieces-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px;margin-bottom:20px}
-.ptile{background:var(--s1);border:1.5px solid var(--b1);border-radius:9px;padding:9px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .12s;user-select:none}
-.ptile:active{transform:scale(.92)}
-.ptile.sel{background:rgba(192,132,252,.18);border-color:var(--accent)}
-.phalves{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;line-height:1;color:var(--text)}
-.pdiv{width:26px;height:1.5px;background:var(--b2);border-radius:1px;margin:2px 0}
-.pval{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:1px}
-.ptile.sel .pval{color:var(--accent)}
+.pieces-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-bottom:20px}
+.ptile{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .12s;user-select:none;-webkit-user-select:none}
+.ptile:active{transform:scale(.87)}
+.ptile.sel .tile-bg{fill:rgba(192,132,252,.25)!important;stroke:#c084fc!important;stroke-width:2!important}
+.ptile.sel .pip{fill:#c084fc!important}
+.ptile.sel .tile-line{stroke:#c084fc!important}
+.ptile.sel .pval{color:var(--accent);font-weight:700}
+.domino-svg{display:block;width:100%;height:auto}
+.tile-bg{fill:#1e1235;stroke:#4d2b7a;stroke-width:1.5}
+.pip{fill:#c4b8d8}
+.tile-line{stroke:#4d2b7a;stroke-width:1.2}
+.pval{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);line-height:1}
 .prog-track{background:var(--s2);border-radius:4px;height:5px;overflow:hidden}
 .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .5s ease}
 .badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;letter-spacing:.04em;border:1px solid var(--b1);background:var(--s2);color:var(--muted)}
@@ -661,6 +665,42 @@ async function saveRound() {
 // ─────────────────────────────────────
 //  PIECE MODAL
 // ─────────────────────────────────────
+// ── SVG DOMINO RENDERER ──────────────────────────────────
+// Pip positions for 0-12 inside a 28x28 cell
+const PIP_POSITIONS = {
+  0:  [],
+  1:  [[14,14]],
+  2:  [[7,7],[21,21]],
+  3:  [[7,7],[14,14],[21,21]],
+  4:  [[7,7],[21,7],[7,21],[21,21]],
+  5:  [[7,7],[21,7],[14,14],[7,21],[21,21]],
+  6:  [[7,7],[21,7],[7,14],[21,14],[7,21],[21,21]],
+  7:  [[7,7],[21,7],[7,14],[21,14],[7,21],[21,21],[14,14]],
+  8:  [[7,7],[14,7],[21,7],[7,21],[14,21],[21,21],[7,14],[21,14]],
+  9:  [[7,7],[14,7],[21,7],[7,14],[14,14],[21,14],[7,21],[14,21],[21,21]],
+  10: [[7,5],[21,5],[7,11],[21,11],[14,14],[7,17],[21,17],[7,23],[21,23]],
+  11: [[7,5],[14,5],[21,5],[7,11],[21,11],[14,14],[7,17],[21,17],[7,23],[14,23],[21,23]],
+  12: [[7,5],[14,5],[21,5],[7,11],[14,11],[21,11],[7,17],[14,17],[21,17],[7,23],[14,23],[21,23]]
+};
+const R = 2.2; // pip radius
+
+function makePips(n, ox, oy) {
+  return (PIP_POSITIONS[n] || []).map(([x,y]) =>
+    `<circle class="pip" cx="${ox+x}" cy="${oy+y}" r="${R}"/>`
+  ).join('');
+}
+
+// Vertical domino SVG: width=36, height=72, two 28x28 halves + divider
+function dominoSVG(a, b) {
+  const W=36, H=72, pad=4, half=28;
+  return `<svg class="domino-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect class="tile-bg" x="1" y="1" width="${W-2}" height="${H-2}" rx="5" ry="5"/>
+    <line class="tile-line" x1="5" y1="${H/2}" x2="${W-5}" y2="${H/2}"/>
+    ${makePips(a, pad, pad)}
+    ${makePips(b, pad, pad+H/2)}
+  </svg>`;
+}
+
 function openPieceModal(playerIdx) {
   S.pieceTarget   = playerIdx;
   S.pieceSelected = [];
@@ -671,11 +711,7 @@ function openPieceModal(playerIdx) {
 
   document.getElementById('pieces-grid').innerHTML = ALL_PIECES.map((piece, i) => `
     <div class="ptile" id="pt-${i}" onclick="togglePiece(${i})">
-      <div class="phalves">
-        <span>${piece.a}</span>
-        <div class="pdiv"></div>
-        <span>${piece.b}</span>
-      </div>
+      ${dominoSVG(piece.a, piece.b)}
       <div class="pval">${piece.v}pts</div>
     </div>`).join('');
 
