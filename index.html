@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a0a2e">
+<title>Dominó Mexicano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0d0618;
+    --surface: #1a0d2e;
+    --surface2: #231240;
+    --border: #3d2060;
+    --accent: #c084fc;
+    --accent2: #818cf8;
+    --gold: #fbbf24;
+    --green: #34d399;
+    --red: #f87171;
+    --text: #f0e8ff;
+    --muted: #9b8db0;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(192,132,252,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(129,140,248,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app { position: relative; z-index: 1; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; padding: 20px 16px 40px; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── HEADER ── */
+  .logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 24px;
+  }
+  .page-title span { color: var(--accent); }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* ── INPUTS ── */
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+  }
+  .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  .btn-danger {
+    background: rgba(248,113,113,0.15);
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--red);
+  }
+  .btn-sm {
+    padding: 8px 14px;
+    font-size: 13px;
+    margin-bottom: 0;
+    width: auto;
+    border-radius: 8px;
+  }
+
+  /* ── PLAYER SETUP ── */
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .color-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s;
+  }
+  .color-dot:active { transform: scale(1.2); }
+  .player-row input {
+    margin: 0;
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    font-size: 15px;
+    flex: 1;
+  }
+  .player-row input:focus { border-bottom: 1px solid var(--accent); }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+
+  /* ── COLOR PICKER ── */
+  .color-picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+  }
+  .color-picker-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: 100%;
+  }
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .color-option {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .color-option.selected { border-color: white; transform: scale(1.15); }
+
+  /* ── RANKING ── */
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    width: 20px;
+    text-align: center;
+  }
+  .rank-num.gold { color: var(--gold); font-size: 16px; }
+  .rank-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .rank-name { flex: 1; font-weight: 600; font-size: 15px; }
+  .rank-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .rank-item.highlight .rank-name { color: var(--accent); }
+
+  /* ── ROUND HISTORY ── */
+  .round-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .round-num {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    width: 24px;
+    font-size: 11px;
+  }
+  .round-winner { flex: 1; display: flex; align-items: center; gap: 6px; }
+  .round-scores { display: flex; gap: 6px; }
+  .round-chip {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .dot-sm {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── ROUND INPUT ── */
+  .winner-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .winner-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .winner-btn.selected { border-color: var(--accent); background: rgba(192,132,252,0.15); }
+  .winner-btn span { font-size: 13px; font-weight: 600; }
+
+  /* ── PIECE SELECTOR ── */
+  .piece-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    overflow-y: auto;
+    padding: 20px 16px;
+  }
+  .piece-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .piece-modal-title { font-size: 18px; font-weight: 700; }
+  .piece-modal-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .pieces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .piece-tile {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .piece-tile.selected {
+    background: rgba(192,132,252,0.2);
+    border-color: var(--accent);
+  }
+  .piece-halves {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .piece-divider {
+    width: 28px;
+    height: 1.5px;
+    background: var(--muted);
+    border-radius: 1px;
+  }
+  .piece-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .piece-tile.selected .piece-value { color: var(--accent); }
+
+  /* ── SCORE ROW ── */
+  .score-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .score-input-row:last-child { border-bottom: none; }
+  .score-player { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .score-controls { display: flex; align-items: center; gap: 8px; }
+  .score-controls input {
+    width: 70px;
+    text-align: center;
+    margin: 0;
+    padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .piece-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .piece-btn:active { background: var(--border); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.4s ease;
+  }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-accent { border-color: var(--accent); color: var(--accent); background: rgba(192,132,252,0.1); }
+  .badge-gold { border-color: var(--gold); color: var(--gold); background: rgba(251,191,36,0.1); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    max-width: calc(100vw - 32px);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── FIREBASE SETUP ── */
+  .setup-steps { counter-reset: steps; }
+  .setup-step {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .setup-step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .setup-step-text { font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .setup-step-text strong { color: var(--text); }
+  .code-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 6px;
+    word-break: break-all;
+  }
+
+  /* ── MISC ── */
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-8 { gap: 8px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-0 { margin-bottom: 0; }
+  .text-muted { color: var(--muted); font-size: 13px; }
+  .text-center { text-align: center; }
+  .text-accent { color: var(--accent); }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 32px 0;
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* ── GAME OVER ── */
+  .winner-card {
+    background: linear-gradient(135deg, rgba(192,132,252,0.15), rgba(129,140,248,0.1));
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .winner-trophy { font-size: 48px; margin-bottom: 12px; }
+  .winner-name { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+  .winner-score { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; color: var(--gold); }
+
+  /* ── LOADING ── */
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 40px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── ANIMATIONS ── */
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+</head>
+<body>
+<div id="app">
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- ═══════════════════════════════════════════
+       SCREEN: Firebase Setup
+  ═══════════════════════════════════════════ -->
+
+  <div id="screen-firebase" class="screen active">
+    <div class="logo">🎲 Dominó Mexicano</div>
+    <div class="page-title">Configurar <span>Firebase</span></div>
+
+```
+<div class="card">
+  <div class="card-title">Por que Firebase?</div>
+  <p class="text-muted" style="font-size:14px;line-height:1.6">
+    Para todos verem a pontuação em tempo real nos seus celulares, precisamos de um banco de dados na nuvem. O Firebase é gratuito e leva 5 minutos pra configurar.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-title">Passo a passo</div>
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="setup-step-num">1</div>
+      <div class="setup-step-text">
+        Acesse <strong>console.firebase.google.com</strong> e crie um projeto (pode chamar de "domino-mexicano")
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">2</div>
+      <div class="setup-step-text">
+        No projeto, vá em <strong>Realtime Database → Criar banco de dados</strong>. Escolha qualquer região e inicie em <strong>modo de teste</strong>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">3</div>
+      <div class="setup-step-text">
+        Copie a URL do banco. Vai parecer com:
+        <div class="code-block">https://SEU-PROJETO-default-rtdb.firebaseio.com</div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-step-num">4</div>
+      <div class="setup-step-text">
+        Cole a URL abaixo e clique em Conectar
+      </div>
+    </div>
+  </div>
+
+  <input type="text" id="firebase-url-input" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
+  <button class="btn btn-primary" onclick="connectFirebase()">⚡ Conectar Firebase</button>
+  <button class="btn btn-ghost" onclick="useDemoMode()">Usar modo offline (apenas 1 dispositivo)</button>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCREEN: Home
+  ═══════════════════════════════════════════ -->
+
+  <div id="screen-home" class="screen">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="logo">🎲 Dominó Mexicano</div>
+        <div style="font-size:22px;font-weight:800">Partidas</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="showNewGame()">+ Nova</button>
+    </div>
+
+```
+<div id="active-games-list"></div>
+<div id="history-games-list"></div>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCREEN: New Game
+  ═══════════════════════════════════════════ -->
+
+  <div id="screen-new-game" class="screen">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-home')">← Voltar</button>
+      <div style="font-size:20px;font-weight:800">Nova Partida</div>
+    </div>
+
+```
+<div class="card">
+  <div class="card-title">Nome da partida</div>
+  <input type="text" id="game-name-input" placeholder="Ex: Churrasqueira do Neguinho">
+</div>
+
+<div class="card">
+  <div class="card-title">Jogadores</div>
+  <div id="players-list"></div>
+  <button class="btn btn-secondary mt-8" onclick="addPlayer()" id="add-player-btn">+ Adicionar jogador</button>
+</div>
+
+<button class="btn btn-primary" onclick="createGame()">🎲 Iniciar Partida</button>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCREEN: Game
+  ═══════════════════════════════════════════ -->
+
+  <div id="screen-game" class="screen">
+    <div id="game-header" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-home')">← Sair</button>
+        <div id="game-name-display" style="font-size:14px;font-weight:700;color:var(--muted)"></div>
+        <button class="btn btn-ghost btn-sm mb-0" onclick="shareGame()">🔗 Link</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted)">Rodada</div>
+          <div style="font-size:28px;font-weight:800" id="round-display">1 <span style="font-size:14px;color:var(--muted);font-weight:600">/ 13</span></div>
+        </div>
+        <div id="round-badge"></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="round-progress" style="width:0%"></div></div>
+    </div>
+
+```
+<div class="tabs">
+  <div class="tab active" id="tab-ranking" onclick="switchTab('ranking')">🏆 Ranking</div>
+  <div class="tab" id="tab-rounds" onclick="switchTab('rounds')">📋 Rodadas</div>
+</div>
+
+<div id="tab-content-ranking">
+  <div class="card">
+    <div id="ranking-list"></div>
+  </div>
+</div>
+
+<div id="tab-content-rounds" style="display:none">
+  <div class="card">
+    <div id="rounds-history"></div>
+  </div>
+</div>
+
+<div id="add-round-section">
+  <button class="btn btn-primary" onclick="showAddRound()">+ Registrar Rodada</button>
+</div>
+<div id="game-over-section" style="display:none"></div>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCREEN: Add Round
+  ═══════════════════════════════════════════ -->
+
+  <div id="screen-add-round" class="screen">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-game')">← Voltar</button>
+      <div id="add-round-title" style="font-size:20px;font-weight:800">Rodada 1</div>
+    </div>
+
+```
+<div class="card">
+  <div class="card-title">Quem ganhou? (ficou sem peças)</div>
+  <div class="winner-selector" id="winner-selector"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Pontos que sobraram (perdedores)</div>
+  <div id="score-inputs"></div>
+</div>
+
+<button class="btn btn-primary" onclick="saveRound()">✅ Salvar Rodada</button>
+```
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCREEN: Game Over
+  ═══════════════════════════════════════════ -->
+
+  <div id="screen-gameover" class="screen">
+    <div class="logo">🎲 Dominó Mexicano</div>
+    <div class="page-title">Fim de <span>Jogo!</span></div>
+    <div id="gameover-content"></div>
+    <button class="btn btn-primary" onclick="showScreen('screen-home')">🏠 Voltar ao Início</button>
+    <button class="btn btn-secondary" onclick="startNewGameFromOver()">🎲 Nova Partida</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PIECE SELECTOR MODAL
+═══════════════════════════════════════════ -->
+
+<div id="piece-modal" style="display:none" class="piece-modal">
+  <div class="piece-modal-header">
+    <div class="piece-modal-title" id="piece-modal-player-name">Selecionar peças</div>
+    <button class="btn btn-ghost btn-sm" onclick="closePieceModal()" style="margin:0">✕ Fechar</button>
+  </div>
+  <div class="piece-modal-score">Total: <span id="piece-modal-total">0</span> pts</div>
+  <div class="pieces-grid" id="pieces-grid"></div>
+  <button class="btn btn-primary" onclick="confirmPieces()">✅ Confirmar <span id="piece-confirm-pts"></span></button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     COLOR PICKER MODAL
+═══════════════════════════════════════════ -->
+
+<div id="color-picker-overlay" style="display:none" class="color-picker-overlay" onclick="closeColorPicker(event)">
+  <div class="color-picker-panel" onclick="event.stopPropagation()">
+    <div style="font-weight:700;margin-bottom:4px">Escolha uma cor</div>
+    <div class="color-grid" id="color-grid"></div>
+    <button class="btn btn-ghost mt-8 mb-0" onclick="closeColorPicker()">Fechar</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+const COLORS = [
+  '#ef4444','#f97316','#eab308','#22c55e','#14b8a6',
+  '#3b82f6','#8b5cf6','#ec4899','#6366f1','#f43f5e',
+  '#10b981','#0ea5e9','#a855f7','#fb923c','#84cc16','#06b6d4'
+];
+
+let state = {
+  firebaseUrl: null,
+  demoMode: false,
+  currentGameId: null,
+  currentGame: null,
+  colorPickerTarget: null,
+  pieceModalTarget: null,
+  pieceModalSelected: [],
+  roundScores: {}
+};
+
+// All domino pieces for dupla-12 (91 pieces)
+function generatePieces() {
+  const pieces = [];
+  for (let i = 0; i <= 12; i++) {
+    for (let j = i; j <= 12; j++) {
+      pieces.push({ a: i, b: j, value: i + j });
+    }
+  }
+  return pieces;
+}
+const ALL_PIECES = generatePieces();
+
+// ════════════════════════════════════════════════════════
+//  FIREBASE / PERSISTENCE
+// ════════════════════════════════════════════════════════
+async function firebaseGet(path) {
+  if (state.demoMode) {
+    const d = localStorage.getItem('domino_' + path);
+    return d ? JSON.parse(d) : null;
+  }
+  const res = await fetch(`${state.firebaseUrl}/${path}.json`);
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+async function firebaseSet(path, data) {
+  if (state.demoMode) {
+    localStorage.setItem('domino_' + path, JSON.stringify(data));
+    return;
+  }
+  await fetch(`${state.firebaseUrl}/${path}.json`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+}
+
+async function firebasePush(path, data) {
+  if (state.demoMode) {
+    const id = 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    const all = await firebaseGet(path) || {};
+    all[id] = data;
+    await firebaseSet(path, all);
+    return id;
+  }
+  const res = await fetch(`${state.firebaseUrl}/${path}.json`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  const json = await res.json();
+  return json.name;
+}
+
+// ════════════════════════════════════════════════════════
+//  REALTIME LISTENER
+// ════════════════════════════════════════════════════════
+let sseSource = null;
+function listenGame(gameId) {
+  if (sseSource) sseSource.close();
+  if (state.demoMode) return;
+
+  sseSource = new EventSource(`${state.firebaseUrl}/games/${gameId}.json`);
+  sseSource.addEventListener('put', e => {
+    const data = JSON.parse(e.data);
+    if (data.data) {
+      state.currentGame = data.data;
+      if (document.getElementById('screen-game').classList.contains('active')) {
+        renderGame();
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  FIREBASE CONNECT
+// ════════════════════════════════════════════════════════
+async function connectFirebase() {
+  let url = document.getElementById('firebase-url-input').value.trim();
+  if (!url) { showToast('❌ Cole a URL do Firebase'); return; }
+  url = url.replace(/\/$/, '');
+
+  // Test connection
+  try {
+    const res = await fetch(`${url}/test.json`, { method: 'PUT', body: '"ok"' });
+    if (!res.ok) throw new Error('fail');
+    state.firebaseUrl = url;
+    localStorage.setItem('domino_firebase_url', url);
+    showToast('✅ Firebase conectado!');
+    await loadHome();
+    showScreen('screen-home');
+  } catch(e) {
+    showToast('❌ URL inválida ou sem permissão. Verifique as regras do banco.');
+  }
+}
+
+function useDemoMode() {
+  state.demoMode = true;
+  showToast('📱 Modo offline ativado');
+  loadHome();
+  showScreen('screen-home');
+}
+
+// ════════════════════════════════════════════════════════
+//  HOME
+// ════════════════════════════════════════════════════════
+async function loadHome() {
+  const games = await firebaseGet('games') || {};
+  const active = [], history = [];
+
+  Object.entries(games).forEach(([id, g]) => {
+    if (!g || !g.name) return;
+    if (g.finished) history.push({ id, ...g });
+    else active.push({ id, ...g });
+  });
+
+  active.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  history.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  const aEl = document.getElementById('active-games-list');
+  const hEl = document.getElementById('history-games-list');
+
+  if (active.length === 0 && history.length === 0) {
+    aEl.innerHTML = `<div class="empty-state"><div class="icon">🎲</div><div>Nenhuma partida ainda.<br>Crie a primeira!</div></div>`;
+    hEl.innerHTML = '';
+    return;
+  }
+
+  aEl.innerHTML = active.length ? `
+    <div class="card-title" style="margin-bottom:8px">EM ANDAMENTO</div>
+    ${active.map(g => gameCard(g, false)).join('')}
+  ` : '';
+
+  hEl.innerHTML = history.length ? `
+    <div class="card-title" style="margin-top:8px;margin-bottom:8px">HISTÓRICO</div>
+    ${history.map(g => gameCard(g, true)).join('')}
+  ` : '';
+}
+
+function gameCard(g, finished) {
+  const players = g.players || [];
+  const rounds = g.rounds ? Object.keys(g.rounds).length : 0;
+  const avatars = players.slice(0,4).map(p =>
+    `<div style="width:28px;height:28px;border-radius:50%;background:${p.color};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;margin-right:-6px;border:2px solid var(--bg)">${p.name[0]}</div>`
+  ).join('');
+
+  return `
+    <div class="card" style="cursor:pointer;margin-bottom:10px" onclick="openGame('${g.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:16px;font-weight:700">${g.name}</div>
+        ${finished ? '<span class="badge">Finalizada</span>' : '<span class="badge badge-accent">Ao vivo</span>'}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+        <div>${avatars}</div>
+        <div style="font-size:12px;color:var(--muted)">${rounds}/13 rodadas</div>
+      </div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════
+//  NEW GAME
+// ════════════════════════════════════════════════════════
+let players = [
+  { name: '', color: COLORS[0] },
+  { name: '', color: COLORS[1] }
+];
+
+function showNewGame() {
+  players = [
+    { name: '', color: COLORS[0] },
+    { name: '', color: COLORS[1] }
+  ];
+  renderPlayers();
+  showScreen('screen-new-game');
+}
+
+function renderPlayers() {
+  const container = document.getElementById('players-list');
+  container.innerHTML = players.map((p, i) => `
+    <div class="player-row">
+      <div class="color-dot" style="background:${p.color}" onclick="openColorPicker(${i})"></div>
+      <input type="text" placeholder="Nome do jogador ${i+1}" value="${p.name}" 
+             oninput="players[${i}].name = this.value" maxlength="20">
+      ${players.length > 2 ? `<button class="remove-btn" onclick="removePlayer(${i})">×</button>` : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('add-player-btn').style.display = players.length >= 8 ? 'none' : '';
+}
+
+function addPlayer() {
+  if (players.length >= 8) return;
+  players.push({ name: '', color: COLORS[players.length % COLORS.length] });
+  renderPlayers();
+}
+
+function removePlayer(i) {
+  players.splice(i, 1);
+  renderPlayers();
+}
+
+function openColorPicker(playerIdx) {
+  state.colorPickerTarget = playerIdx;
+  const grid = document.getElementById('color-grid');
+  grid.innerHTML = COLORS.map(c => `
+    <div class="color-option ${players[playerIdx].color === c ? 'selected' : ''}"
+         style="background:${c}"
+         onclick="selectColor('${c}')"></div>
+  `).join('');
+  document.getElementById('color-picker-overlay').style.display = 'flex';
+}
+
+function selectColor(color) {
+  if (state.colorPickerTarget !== null) {
+    players[state.colorPickerTarget].color = color;
+    renderPlayers();
+  }
+  closeColorPicker();
+}
+
+function closeColorPicker(e) {
+  if (!e || e.target === document.getElementById('color-picker-overlay')) {
+    document.getElementById('color-picker-overlay').style.display = 'none';
+  }
+}
+
+async function createGame() {
+  const name = document.getElementById('game-name-input').value.trim() || 'Partida sem nome';
+  const validPlayers = players.filter(p => p.name.trim());
+
+  if (validPlayers.length < 2) {
+    showToast('❌ Adicione pelo menos 2 jogadores com nome');
+    return;
+  }
+
+  const game = {
+    name,
+    players: validPlayers.map(p => ({ name: p.name.trim(), color: p.color })),
+    rounds: {},
+    finished: false,
+    createdAt: Date.now()
+  };
+
+  const id = await firebasePush('games', game);
+  state.currentGameId = id;
+  game.id = id;
+  state.currentGame = game;
+
+  if (!state.demoMode) listenGame(id);
+  renderGame();
+  showScreen('screen-game');
+  showToast('🎲 Partida criada!');
+}
+
+// ════════════════════════════════════════════════════════
+//  OPEN EXISTING GAME
+// ════════════════════════════════════════════════════════
+async function openGame(id) {
+  const game = await firebaseGet(`games/${id}`);
+  if (!game) { showToast('❌ Partida não encontrada'); return; }
+  state.currentGameId = id;
+  state.currentGame = { ...game, id };
+  if (!state.demoMode) listenGame(id);
+  renderGame();
+  showScreen('screen-game');
+}
+
+// ════════════════════════════════════════════════════════
+//  GAME SCREEN
+// ════════════════════════════════════════════════════════
+function renderGame() {
+  const g = state.currentGame;
+  if (!g) return;
+
+  const rounds = g.rounds ? Object.values(g.rounds) : [];
+  const roundNum = rounds.length + 1;
+  const finished = g.finished || roundNum > 13;
+
+  document.getElementById('game-name-display').textContent = g.name;
+  document.getElementById('round-display').innerHTML = finished
+    ? `<span style="color:var(--gold)">✓ 13</span> <span style="font-size:14px;color:var(--muted);font-weight:600">/ 13</span>`
+    : `${roundNum} <span style="font-size:14px;color:var(--muted);font-weight:600">/ 13</span>`;
+
+  document.getElementById('round-progress').style.width = `${Math.min(rounds.length / 13 * 100, 100)}%`;
+
+  const badge = document.getElementById('round-badge');
+  if (finished) {
+    badge.innerHTML = '<span class="badge badge-gold">🏆 Finalizada</span>';
+  } else {
+    badge.innerHTML = `<span class="badge badge-accent">Rodada ${roundNum}</span>`;
+  }
+
+  // Compute scores
+  const scores = computeScores(g);
+  renderRanking(scores, g.players);
+  renderRoundsHistory(rounds, g.players);
+
+  // Show/hide add round
+  document.getElementById('add-round-section').style.display = finished ? 'none' : '';
+  document.getElementById('game-over-section').style.display = finished ? '' : 'none';
+
+  if (finished) {
+    const winner = scores[0];
+    document.getElementById('game-over-section').innerHTML = `
+      <div class="winner-card">
+        <div class="winner-trophy">🏆</div>
+        <div class="winner-name">${winner.name}</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:8px">Vencedor com menos pontos</div>
+        <div class="winner-score">${winner.total} pts</div>
+      </div>
+      <button class="btn btn-secondary" onclick="showScreen('screen-gameover');renderGameOver()">Ver resultado completo</button>
+    `;
+  }
+}
+
+function computeScores(g) {
+  const rounds = g.rounds ? Object.values(g.rounds) : [];
+  return g.players.map((p, idx) => {
+    let total = rounds.reduce((sum, r) => sum + (r.scores?.[idx] || 0), 0);
+    return { ...p, total, idx };
+  }).sort((a, b) => a.total - b.total);
+}
+
+function renderRanking(scores, players) {
+  const myIdx = -1; // could track current user
+  document.getElementById('ranking-list').innerHTML = scores.map((p, rank) => `
+    <div class="rank-item">
+      <div class="rank-num ${rank === 0 ? 'gold' : ''}">${rank === 0 ? '🥇' : rank + 1}</div>
+      <div class="rank-avatar" style="background:${p.color}">${p.name[0]}</div>
+      <div class="rank-name">${p.name}</div>
+      <div class="rank-score">${p.total}</div>
+    </div>
+  `).join('');
+}
+
+function renderRoundsHistory(rounds, players) {
+  const el = document.getElementById('rounds-history');
+  if (rounds.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px 0"><div>Nenhuma rodada ainda</div></div>';
+    return;
+  }
+
+  el.innerHTML = rounds.map((r, i) => {
+    const winner = players[r.winnerIdx];
+    const scoreChips = (r.scores || []).map((s, pi) => {
+      if (pi === r.winnerIdx) return '';
+      return `<span class="round-chip"><span class="dot-sm" style="background:${players[pi].color}"></span>${s}</span>`;
+    }).join('');
+
+    return `
+      <div class="round-row">
+        <div class="round-num">${i+1}</div>
+        <div class="round-winner">
+          <div class="dot-sm" style="background:${winner?.color}"></div>
+          <span style="font-weight:600;font-size:13px">${winner?.name}</span>
+          <span style="font-size:11px;color:var(--green)">ganhou</span>
+        </div>
+        <div class="round-scores">${scoreChips}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-ranking').classList.toggle('active', tab === 'ranking');
+  document.getElementById('tab-rounds').classList.toggle('active', tab === 'rounds');
+  document.getElementById('tab-content-ranking').style.display = tab === 'ranking' ? '' : 'none';
+  document.getElementById('tab-content-rounds').style.display = tab === 'rounds' ? '' : 'none';
+}
+
+// ════════════════════════════════════════════════════════
+//  ADD ROUND
+// ════════════════════════════════════════════════════════
+let selectedWinner = null;
+
+function showAddRound() {
+  const g = state.currentGame;
+  const rounds = g.rounds ? Object.values(g.rounds).length : 0;
+  selectedWinner = null;
+  state.roundScores = {};
+
+  document.getElementById('add-round-title').textContent = `Rodada ${rounds + 1}`;
+
+  // Winner selector
+  document.getElementById('winner-selector').innerHTML = g.players.map((p, i) => `
+    <div class="winner-btn" id="winner-btn-${i}" onclick="selectWinner(${i})">
+      <div style="width:40px;height:40px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white">${p.name[0]}</div>
+      <span>${p.name}</span>
+    </div>
+  `).join('');
+
+  // Score inputs
+  document.getElementById('score-inputs').innerHTML = g.players.map((p, i) => `
+    <div class="score-input-row" id="score-row-${i}">
+      <div class="score-player">
+        <div style="width:32px;height:32px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white">${p.name[0]}</div>
+        <span style="font-size:14px;font-weight:600">${p.name}</span>
+      </div>
+      <div class="score-controls">
+        <button class="piece-btn" onclick="openPieceModal(${i})" title="Selecionar peças">🎯</button>
+        <input type="number" id="score-input-${i}" min="0" value="0" 
+               oninput="state.roundScores[${i}] = parseInt(this.value)||0">
+      </div>
+    </div>
+  `).join('');
+
+  showScreen('screen-add-round');
+}
+
+function selectWinner(idx) {
+  selectedWinner = idx;
+  document.querySelectorAll('.winner-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+  });
+
+  // Winner gets 0 points, disable their input
+  document.querySelectorAll('.score-input-row').forEach((row, i) => {
+    const inp = document.getElementById(`score-input-${i}`);
+    if (i === idx) {
+      inp.value = 0;
+      inp.disabled = true;
+      inp.style.opacity = '0.4';
+      state.roundScores[i] = 0;
+    } else {
+      inp.disabled = false;
+      inp.style.opacity = '1';
+    }
+  });
+}
+
+async function saveRound() {
+  if (selectedWinner === null) {
+    showToast('❌ Selecione quem ganhou a rodada');
+    return;
+  }
+
+  const g = state.currentGame;
+  const scores = g.players.map((_, i) => {
+    if (i === selectedWinner) return 0;
+    const v = parseInt(document.getElementById(`score-input-${i}`).value) || 0;
+    return v;
+  });
+
+  const round = {
+    winnerIdx: selectedWinner,
+    scores,
+    timestamp: Date.now()
+  };
+
+  const rounds = g.rounds ? { ...g.rounds } : {};
+  const roundKey = `round_${Object.keys(rounds).length + 1}`;
+  rounds[roundKey] = round;
+
+  const updates = { ...g, rounds };
+
+  // Check if game is over (13 rounds)
+  if (Object.keys(rounds).length >= 13) {
+    updates.finished = true;
+  }
+
+  await firebaseSet(`games/${state.currentGameId}`, updates);
+  state.currentGame = updates;
+
+  showScreen('screen-game');
+  renderGame();
+  showToast('✅ Rodada salva!');
+
+  if (updates.finished) {
+    setTimeout(() => {
+      renderGameOver();
+      showScreen('screen-gameover');
+    }, 800);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  PIECE SELECTOR MODAL
+// ════════════════════════════════════════════════════════
+function openPieceModal(playerIdx) {
+  state.pieceModalTarget = playerIdx;
+  state.pieceModalSelected = [];
+
+  const p = state.currentGame.players[playerIdx];
+  document.getElementById('piece-modal-player-name').textContent = `Peças de ${p.name}`;
+  document.getElementById('piece-modal-total').textContent = '0';
+  document.getElementById('piece-confirm-pts').textContent = '';
+
+  const grid = document.getElementById('pieces-grid');
+  grid.innerHTML = ALL_PIECES.map((piece, i) => `
+    <div class="piece-tile" id="piece-tile-${i}" onclick="togglePiece(${i})">
+      <div class="piece-halves">
+        <span>${piece.a}</span>
+        <div class="piece-divider"></div>
+        <span>${piece.b}</span>
+      </div>
+      <div class="piece-value">${piece.value}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('piece-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function togglePiece(idx) {
+  const tile = document.getElementById(`piece-tile-${idx}`);
+  const pos = state.pieceModalSelected.indexOf(idx);
+  if (pos === -1) {
+    state.pieceModalSelected.push(idx);
+    tile.classList.add('selected');
+  } else {
+    state.pieceModalSelected.splice(pos, 1);
+    tile.classList.remove('selected');
+  }
+  const total = state.pieceModalSelected.reduce((sum, i) => sum + ALL_PIECES[i].value, 0);
+  document.getElementById('piece-modal-total').textContent = total;
+  document.getElementById('piece-confirm-pts').textContent = `(${total} pts)`;
+}
+
+function confirmPieces() {
+  const total = state.pieceModalSelected.reduce((sum, i) => sum + ALL_PIECES[i].value, 0);
+  const inp = document.getElementById(`score-input-${state.pieceModalTarget}`);
+  if (inp) {
+    inp.value = total;
+    state.roundScores[state.pieceModalTarget] = total;
+  }
+  closePieceModal();
+  showToast(`🎯 ${total} pontos calculados`);
+}
+
+function closePieceModal() {
+  document.getElementById('piece-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ════════════════════════════════════════════════════════
+//  GAME OVER
+// ════════════════════════════════════════════════════════
+function renderGameOver() {
+  const g = state.currentGame;
+  const scores = computeScores(g);
+  const winner = scores[0];
+
+  document.getElementById('gameover-content').innerHTML = `
+    <div class="winner-card">
+      <div class="winner-trophy">🏆</div>
+      <div class="winner-name" style="color:${winner.color}">${winner.name}</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:8px">Vencedor — menos pontos!</div>
+      <div class="winner-score">${winner.total} pts</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Placar Final</div>
+      ${scores.map((p, rank) => `
+        <div class="rank-item">
+          <div class="rank-num ${rank === 0 ? 'gold' : ''}">${rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : rank+1}</div>
+          <div class="rank-avatar" style="background:${p.color}">${p.name[0]}</div>
+          <div class="rank-name">${p.name}</div>
+          <div class="rank-score">${p.total}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function startNewGameFromOver() {
+  showScreen('screen-new-game');
+}
+
+// ════════════════════════════════════════════════════════
+//  SHARE
+// ════════════════════════════════════════════════════════
+function shareGame() {
+  const url = window.location.href.split('?')[0] + `?game=${state.currentGameId}&fb=${encodeURIComponent(state.firebaseUrl || '')}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Dominó Mexicano', text: 'Entre na partida!', url });
+  } else {
+    navigator.clipboard?.writeText(url);
+    showToast('🔗 Link copiado!');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (id === 'screen-home') loadHome();
+}
+
+// ════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+async function init() {
+  // Check URL params for shared game link
+  const params = new URLSearchParams(window.location.search);
+  const gameId = params.get('game');
+  const fbUrl = params.get('fb');
+
+  if (fbUrl) {
+    state.firebaseUrl = decodeURIComponent(fbUrl);
+    localStorage.setItem('domino_firebase_url', state.firebaseUrl);
+  }
+
+  // Check saved Firebase URL
+  const saved = localStorage.getItem('domino_firebase_url');
+  if (saved && !state.firebaseUrl) state.firebaseUrl = saved;
+
+  if (state.firebaseUrl) {
+    await loadHome();
+    if (gameId) {
+      await openGame(gameId);
+    } else {
+      showScreen('screen-home');
+    }
+  } else {
+    showScreen('screen-firebase');
+  }
+
+  // Override new game button
+  document.querySelector('[onclick="showScreen(\'screen-new-game\')"]')?.removeAttribute('onclick');
+}
+
+init();
+</script>
+
+</body>
+</html>
