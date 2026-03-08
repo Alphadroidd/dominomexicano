@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -6,9 +7,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0618">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="logo.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="logo.svg">
 <title>Dominó Mexicano</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -42,6 +40,8 @@ input:disabled{opacity:.3;cursor:not-allowed}
 .btn-secondary{background:var(--s2);border:1px solid var(--b1);color:var(--text)}
 .btn-secondary:active{background:var(--s3)}
 .btn-ghost{background:transparent;border:1px solid var(--b1);color:var(--muted);font-size:13px;padding:10px 16px}
+.btn-danger{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:#f87171}
+.btn-danger:active{background:rgba(248,113,113,.2)}
 .btn-sm{padding:9px 14px;font-size:13px;margin-bottom:0;width:auto;border-radius:9px}
 .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px}
 .top-bar-title{font-size:20px;font-weight:800;flex:1}
@@ -137,6 +137,7 @@ input:disabled{opacity:.3;cursor:not-allowed}
 <div id="toast"></div>
 
 <!-- LOADING -->
+
 <div id="screen-loading" class="screen active">
   <div class="load-center">
     <div style="font-size:48px">🎲</div>
@@ -146,6 +147,7 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- HOME -->
+
 <div id="screen-home" class="screen">
   <div class="top-bar">
     <div>
@@ -158,6 +160,7 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- NEW GAME -->
+
 <div id="screen-new-game" class="screen">
   <div class="top-bar">
     <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-home')">← Voltar</button>
@@ -173,6 +176,7 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- GAME -->
+
 <div id="screen-game" class="screen">
   <div style="margin-bottom:14px">
     <div class="top-bar" style="margin-bottom:10px">
@@ -205,11 +209,13 @@ input:disabled{opacity:.3;cursor:not-allowed}
 
   <div id="add-round-wrap">
     <button class="btn btn-primary" onclick="showAddRound()">+ Registrar Rodada</button>
+    <button class="btn btn-danger" onclick="confirmFinishGame()" style="margin-top:0">🏁 Finalizar Jogo</button>
   </div>
   <div id="inline-gameover" style="display:none"></div>
 </div>
 
 <!-- ADD ROUND -->
+
 <div id="screen-add-round" class="screen">
   <div class="top-bar">
     <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-game')">← Voltar</button>
@@ -225,6 +231,7 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- GAME OVER -->
+
 <div id="screen-gameover" class="screen">
   <div class="logo">🎲 Dominó Mexicano</div>
   <div class="page-title">Fim de <span>Jogo!</span></div>
@@ -236,6 +243,7 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- PIECE MODAL -->
+
 <div id="piece-modal" style="display:none" class="piece-modal">
   <div class="piece-modal-top">
     <div style="font-size:17px;font-weight:700" id="piece-modal-title">Selecionar peças</div>
@@ -252,11 +260,24 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- COLOR PICKER -->
+
 <div id="color-overlay" style="display:none" class="overlay" onclick="closeColorPicker(event)">
   <div class="panel" onclick="event.stopPropagation()">
     <div style="font-weight:700;font-size:16px;margin-bottom:2px">Cor do jogador</div>
     <div class="color-grid" id="color-grid"></div>
     <button class="btn btn-ghost mt-8 mb-0" onclick="closeColorPicker()">Fechar</button>
+  </div>
+</div>
+
+<!-- CONFIRM FINISH MODAL -->
+
+<div id="confirm-overlay" style="display:none" class="overlay" onclick="closeConfirm(event)">
+  <div class="panel" onclick="event.stopPropagation()">
+    <div style="font-size:28px;margin-bottom:10px;text-align:center">🏁</div>
+    <div style="font-weight:800;font-size:18px;margin-bottom:8px;text-align:center">Finalizar jogo?</div>
+    <div style="color:var(--muted);font-size:14px;text-align:center;margin-bottom:20px;line-height:1.5">O jogo será encerrado agora e o placar atual será o resultado final.</div>
+    <button class="btn btn-danger mb-0" onclick="finishGameNow()" style="margin-bottom:10px">🏁 Sim, finalizar</button>
+    <button class="btn btn-ghost mb-0" onclick="closeConfirm()">Cancelar</button>
   </div>
 </div>
 
@@ -564,7 +585,6 @@ function renderRoundsHistory(rounds, players) {
     el.innerHTML = '<div class="empty" style="padding:20px 0">Nenhuma rodada registrada ainda</div>';
     return;
   }
-  // Get sorted round keys for editing
   const roundKeys = S.game.rounds ? Object.keys(S.game.rounds).sort() : [];
   el.innerHTML = rounds.map((r, i) => {
     const w = players[r.winnerIdx] || {};
@@ -583,7 +603,11 @@ function renderRoundsHistory(rounds, players) {
           <span style="font-size:11px;color:var(--green);flex-shrink:0">✓</span>
         </div>
         <div class="rchips">${chips}</div>
-        <button onclick="editRound('${key}', ${i})" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;transition:color .15s" title="Editar rodada">✏️</button>
+        <button onclick="editRound('${key}', ${i})"
+          style="background:var(--s2);border:1px solid var(--b1);border-radius:7px;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;padding:4px 9px;flex-shrink:0;white-space:nowrap;transition:background .15s"
+          onmouseover="this.style.background='var(--b1)'" onmouseout="this.style.background='var(--s2)'">
+          ✏️ editar
+        </button>
       </div>`;
   }).join('');
 }
@@ -870,6 +894,28 @@ function showGameOver() {
 }
 
 // ─────────────────────────────────────
+//  FINISH GAME
+// ─────────────────────────────────────
+function confirmFinishGame() {
+  document.getElementById('confirm-overlay').style.display = 'flex';
+}
+
+function closeConfirm(e) {
+  if (!e || e.target === document.getElementById('confirm-overlay'))
+    document.getElementById('confirm-overlay').style.display = 'none';
+}
+
+async function finishGameNow() {
+  closeConfirm();
+  const updated = { ...S.game, finished: true };
+  await fbSet(`games/${S.gameId}`, updated);
+  S.game = updated;
+  renderGame();
+  toast('🏁 Jogo finalizado!');
+  setTimeout(showGameOver, 600);
+}
+
+// ─────────────────────────────────────
 //  SHARE
 // ─────────────────────────────────────
 function shareGame() {
@@ -918,6 +964,6 @@ function esc(s) {
 // ─────────────────────────────────────
 init();
 </script>
-<script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+
 </body>
 </html>
