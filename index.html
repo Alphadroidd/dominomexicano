@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0618">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo.svg">
 <title>Dominó Mexicano</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -135,7 +137,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 <div id="toast"></div>
 
 <!-- LOADING -->
-
 <div id="screen-loading" class="screen active">
   <div class="load-center">
     <div style="font-size:48px">🎲</div>
@@ -145,7 +146,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- HOME -->
-
 <div id="screen-home" class="screen">
   <div class="top-bar">
     <div>
@@ -158,7 +158,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- NEW GAME -->
-
 <div id="screen-new-game" class="screen">
   <div class="top-bar">
     <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-home')">← Voltar</button>
@@ -174,7 +173,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- GAME -->
-
 <div id="screen-game" class="screen">
   <div style="margin-bottom:14px">
     <div class="top-bar" style="margin-bottom:10px">
@@ -212,7 +210,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- ADD ROUND -->
-
 <div id="screen-add-round" class="screen">
   <div class="top-bar">
     <button class="btn btn-ghost btn-sm mb-0" onclick="showScreen('screen-game')">← Voltar</button>
@@ -228,7 +225,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- GAME OVER -->
-
 <div id="screen-gameover" class="screen">
   <div class="logo">🎲 Dominó Mexicano</div>
   <div class="page-title">Fim de <span>Jogo!</span></div>
@@ -240,7 +236,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- PIECE MODAL -->
-
 <div id="piece-modal" style="display:none" class="piece-modal">
   <div class="piece-modal-top">
     <div style="font-size:17px;font-weight:700" id="piece-modal-title">Selecionar peças</div>
@@ -257,7 +252,6 @@ input:disabled{opacity:.3;cursor:not-allowed}
 </div>
 
 <!-- COLOR PICKER -->
-
 <div id="color-overlay" style="display:none" class="overlay" onclick="closeColorPicker(event)">
   <div class="panel" onclick="event.stopPropagation()">
     <div style="font-weight:700;font-size:16px;margin-bottom:2px">Cor do jogador</div>
@@ -570,6 +564,8 @@ function renderRoundsHistory(rounds, players) {
     el.innerHTML = '<div class="empty" style="padding:20px 0">Nenhuma rodada registrada ainda</div>';
     return;
   }
+  // Get sorted round keys for editing
+  const roundKeys = S.game.rounds ? Object.keys(S.game.rounds).sort() : [];
   el.innerHTML = rounds.map((r, i) => {
     const w = players[r.winnerIdx] || {};
     const chips = (r.scores || []).map((s, pi) => {
@@ -577,15 +573,17 @@ function renderRoundsHistory(rounds, players) {
       const pl = players[pi] || {};
       return `<span class="chip"><span class="dot-xs" style="background:${pl.color}"></span>${s}</span>`;
     }).join('');
+    const key = roundKeys[i] || '';
     return `
       <div class="round-row">
         <div class="rnum">${i+1}</div>
         <div class="rwinner">
           <span class="dot-xs" style="background:${w.color}"></span>
           <span class="rwinner-name">${esc(w.name)}</span>
-          <span style="font-size:11px;color:var(--green);flex-shrink:0">✓ ganhou</span>
+          <span style="font-size:11px;color:var(--green);flex-shrink:0">✓</span>
         </div>
         <div class="rchips">${chips}</div>
+        <button onclick="editRound('${key}', ${i})" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;transition:color .15s" title="Editar rodada">✏️</button>
       </div>`;
   }).join('');
 }
@@ -604,8 +602,11 @@ function showAddRound() {
   const g = S.game;
   const rNum = (g.rounds ? Object.keys(g.rounds).length : 0) + 1;
   S.selectedWinner = null;
+  S.editingRoundKey = null; // clear any previous edit state
 
   document.getElementById('add-round-title').textContent = `Rodada ${rNum}`;
+  const saveBtn = document.querySelector('#screen-add-round .btn-primary');
+  if (saveBtn) saveBtn.textContent = '✅ Salvar Rodada';
 
   document.getElementById('winner-grid').innerHTML = g.players.map((p, i) => `
     <div class="wbtn" id="wbtn-${i}" onclick="selectWinner(${i})">
@@ -639,6 +640,49 @@ function selectWinner(idx) {
   });
 }
 
+// ─────────────────────────────────────
+//  EDIT ROUND
+// ─────────────────────────────────────
+function editRound(roundKey, roundIndex) {
+  const g = S.game;
+  const round = g.rounds[roundKey];
+  if (!round) return;
+
+  S.selectedWinner = round.winnerIdx;
+  S.editingRoundKey = roundKey; // store which key we're editing
+
+  document.getElementById('add-round-title').textContent = `Editar Rodada ${roundIndex + 1}`;
+
+  document.getElementById('winner-grid').innerHTML = g.players.map((p, i) => `
+    <div class="wbtn ${i === round.winnerIdx ? 'sel' : ''}" id="wbtn-${i}" onclick="selectWinner(${i})">
+      <div style="width:42px;height:42px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff">${(p.name[0]||'?').toUpperCase()}</div>
+      <div class="wbtn-name">${esc(p.name)}</div>
+    </div>`).join('');
+
+  document.getElementById('score-inputs').innerHTML = g.players.map((p, i) => {
+    const val = (round.scores && round.scores[i]) || 0;
+    const isWinner = i === round.winnerIdx;
+    return `
+    <div class="score-row">
+      <div class="score-pinfo">
+        <div style="width:32px;height:32px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${(p.name[0]||'?').toUpperCase()}</div>
+        <div class="score-pname">${esc(p.name)}</div>
+      </div>
+      <div class="score-ctrl">
+        <button class="icon-btn" onclick="openPieceModal(${i})" title="Calcular pelas peças">🎯</button>
+        <input type="number" id="si-${i}" min="0" value="${val}" ${isWinner ? 'disabled' : ''}>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Change save button to show "Salvar Edição"
+  const saveBtn = document.querySelector('#screen-add-round .btn-primary');
+  if (saveBtn) saveBtn.textContent = '✅ Salvar Edição';
+
+  switchTab('rounds'); // go back to rounds tab after saving
+  showScreen('screen-add-round');
+}
+
 async function saveRound() {
   if (S.selectedWinner === null) { toast('❌ Selecione quem ganhou!'); return; }
   const g = S.game;
@@ -648,25 +692,62 @@ async function saveRound() {
   });
 
   const rounds = { ...(g.rounds || {}) };
-  const n = String(Object.keys(rounds).length + 1).padStart(2, '0');
-  rounds[`r${n}`] = { winnerIdx: S.selectedWinner, scores, ts: Date.now() };
+  const isEdit = !!S.editingRoundKey;
 
-  const finished = Object.keys(rounds).length >= 13;
-  const updated  = { ...g, rounds, finished };
+  if (isEdit) {
+    rounds[S.editingRoundKey] = {
+      ...rounds[S.editingRoundKey],
+      winnerIdx: S.selectedWinner,
+      scores,
+      editedAt: Date.now()
+    };
+    S.editingRoundKey = null;
+  } else {
+    const n = String(Object.keys(rounds).length + 1).padStart(2, '0');
+    rounds[`r${n}`] = { winnerIdx: S.selectedWinner, scores, ts: Date.now() };
+  }
+
+  const finished = !isEdit && Object.keys(rounds).length >= 13;
+  const updated  = { ...g, rounds, finished: isEdit ? g.finished : finished };
   await fbSet(`games/${S.gameId}`, updated);
   S.game = updated;
 
+  const saveBtn = document.querySelector('#screen-add-round .btn-primary');
+  if (saveBtn) saveBtn.textContent = '✅ Salvar Rodada';
+
   showScreen('screen-game');
   renderGame();
-  toast('✅ Rodada salva!');
-  if (finished) setTimeout(showGameOver, 700);
+  if (isEdit) {
+    switchTab('rounds');
+    toast('✏️ Rodada editada!');
+  } else {
+    toast('✅ Rodada salva!');
+    if (finished) setTimeout(showGameOver, 700);
+  }
 }
 
 // ─────────────────────────────────────
 //  PIECE MODAL
 // ─────────────────────────────────────
-// ── SVG DOMINO RENDERER ──────────────────────────────────
-// Pip positions for 0-12 inside a 28x28 cell
+
+// ── PIP COLORS BY NUMBER ─────────────
+const PIP_COLORS = {
+  0:  null,         // blank
+  1:  '#3b82f6',    // azul
+  2:  '#4ade80',    // verde claro
+  3:  '#991b1b',    // vermelho escuro
+  4:  '#374151',    // cinza escuro
+  5:  '#6b7f99',    // azul acinzentado
+  6:  '#facc15',    // amarelo
+  7:  '#f472b6',    // rosa
+  8:  '#22c55e',    // verde
+  9:  '#a855f7',    // roxo
+  10: '#f97316',    // laranja
+  11: '#111827',    // preto (stroke branco)
+  12: '#9ca3af',    // cinza
+};
+
+// ── PIP POSITIONS inside a 28×28 cell ─
 const PIP_POSITIONS = {
   0:  [],
   1:  [[14,14]],
@@ -682,22 +763,41 @@ const PIP_POSITIONS = {
   11: [[7,5],[14,5],[21,5],[7,11],[21,11],[14,14],[7,17],[21,17],[7,23],[14,23],[21,23]],
   12: [[7,5],[14,5],[21,5],[7,11],[14,11],[21,11],[7,17],[14,17],[21,17],[7,23],[14,23],[21,23]]
 };
-const R = 2.2; // pip radius
+const R = 2.4; // pip radius
 
 function makePips(n, ox, oy) {
-  return (PIP_POSITIONS[n] || []).map(([x,y]) =>
-    `<circle class="pip" cx="${ox+x}" cy="${oy+y}" r="${R}"/>`
+  const color = PIP_COLORS[n];
+  if (!color) return ''; // 0 = blank
+  const stroke = n === 11 ? ' stroke="#6b7280" stroke-width="0.6"' : '';
+  return (PIP_POSITIONS[n] || []).map(([x, y]) =>
+    `<circle cx="${ox+x}" cy="${oy+y}" r="${R}" fill="${color}"${stroke}/>`
   ).join('');
 }
 
-// Vertical domino SVG: width=36, height=72, two 28x28 halves + divider
-function dominoSVG(a, b) {
-  const W=36, H=72, pad=4, half=28;
+// Domino SVG — vertical orientation, W×H grid
+function dominoSVG(a, b, small = false) {
+  const W = small ? 30 : 36, H = small ? 60 : 72, pad = 4;
+  const mid = H / 2;
+  // half cell size scales with W
+  const cell = W - pad * 2; // 28 for W=36, 22 for W=30
+  // Scale pip positions: PIP_POSITIONS use 28px cell baseline
+  const scale = cell / 28;
+
+  function scaledPips(n, ox, oy) {
+    const color = PIP_COLORS[n];
+    if (!color) return '';
+    const r = R * scale;
+    const stroke = n === 11 ? ` stroke="#6b7280" stroke-width="0.5"` : '';
+    return (PIP_POSITIONS[n] || []).map(([x, y]) =>
+      `<circle cx="${ox + x * scale}" cy="${oy + y * scale}" r="${r}" fill="${color}"${stroke}/>`
+    ).join('');
+  }
+
   return `<svg class="domino-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-    <rect class="tile-bg" x="1" y="1" width="${W-2}" height="${H-2}" rx="5" ry="5"/>
-    <line class="tile-line" x1="5" y1="${H/2}" x2="${W-5}" y2="${H/2}"/>
-    ${makePips(a, pad, pad)}
-    ${makePips(b, pad, pad+H/2)}
+    <rect class="tile-bg" x="1" y="1" width="${W-2}" height="${H-2}" rx="4" ry="4"/>
+    <line class="tile-line" x1="4" y1="${mid}" x2="${W-4}" y2="${mid}"/>
+    ${scaledPips(a, pad, pad)}
+    ${scaledPips(b, pad, pad + mid)}
   </svg>`;
 }
 
@@ -818,6 +918,6 @@ function esc(s) {
 // ─────────────────────────────────────
 init();
 </script>
-
+<script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
 </body>
 </html>

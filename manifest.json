@@ -1,0 +1,13 @@
+{
+  "name": "Dominó Mexicano",
+  "short_name": "Dominó",
+  "description": "Placar em tempo real para Dominó Mexicano dupla-12",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0618",
+  "theme_color": "#0d0618",
+  "icons": [
+    { "src": "logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

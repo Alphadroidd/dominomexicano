@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background gradient -->
+    <radialGradient id="bg" cx="40%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#231040"/>
+      <stop offset="100%" stop-color="#0d0618"/>
+    </radialGradient>
+
+    <!-- Tile gradient -->
+    <linearGradient id="tile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a1650"/>
+      <stop offset="100%" stop-color="#1a0d38"/>
+    </linearGradient>
+
+    <!-- Tile border gradient -->
+    <linearGradient id="tileBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <!-- Pip glow gradient -->
+    <radialGradient id="pipGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0e8ff"/>
+      <stop offset="40%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Inner pip -->
+    <radialGradient id="pip" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#f9f5ff"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </radialGradient>
+
+    <!-- Divider line gradient -->
+    <linearGradient id="divLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4d2b7a" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#7c3aed"/>
+      <stop offset="70%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#4d2b7a" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Ambient glow filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Soft pip glow -->
+    <filter id="pipGlowFilter" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Tile shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#7c3aed" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- Clip path for rounded tile -->
+    <clipPath id="tileClip">
+      <rect x="136" y="56" width="240" height="400" rx="32" ry="32"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── BACKGROUND CIRCLE ── -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Subtle radial shimmer in bg -->
+  <circle cx="200" cy="160" r="180" fill="url(#pipGlow)" opacity="0.08"/>
+  <circle cx="320" cy="360" r="140" fill="url(#pipGlow)" opacity="0.06"/>
+
+  <!-- ── DOMINO TILE SHADOW ── -->
+  <rect x="136" y="56" width="240" height="400" rx="32" ry="32"
+        fill="#7c3aed" opacity="0.25" filter="url(#shadow)"
+        transform="translate(0,12)"/>
+
+  <!-- ── DOMINO TILE BODY ── -->
+  <rect x="136" y="56" width="240" height="400" rx="32" ry="32"
+        fill="url(#tile)"/>
+
+  <!-- Tile border (stroke via outline rect) -->
+  <rect x="137.5" y="57.5" width="237" height="397" rx="31" ry="31"
+        fill="none" stroke="url(#tileBorder)" stroke-width="3"/>
+
+  <!-- Subtle inner highlight (top edge) -->
+  <rect x="152" y="68" width="208" height="60" rx="20" ry="20"
+        fill="white" opacity="0.04" clip-path="url(#tileClip)"/>
+
+  <!-- ── DIVIDER LINE ── -->
+  <line x1="158" y1="256" x2="354" y2="256"
+        stroke="url(#divLine)" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- ── TOP HALF — 6 pips (3×2 layout) ── -->
+  <!-- col1: x=196, col2: x=256, col3: x=316 -->
+  <!-- row1: y=120, row2: y=196 -->
+
+  <!-- Glow halos under pips (top half) -->
+  <circle cx="196" cy="120" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="316" cy="120" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="196" cy="196" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="316" cy="196" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="196" cy="158" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="316" cy="158" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+
+  <!-- Actual pips top half (6) -->
+  <circle cx="196" cy="120" r="16" fill="url(#pip)"/>
+  <circle cx="316" cy="120" r="16" fill="url(#pip)"/>
+  <circle cx="196" cy="158" r="16" fill="url(#pip)"/>
+  <circle cx="316" cy="158" r="16" fill="url(#pip)"/>
+  <circle cx="196" cy="196" r="16" fill="url(#pip)"/>
+  <circle cx="316" cy="196" r="16" fill="url(#pip)"/>
+
+  <!-- ── BOTTOM HALF — 3 pips (diagonal) ── -->
+  <!-- Glow halos -->
+  <circle cx="196" cy="316" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="256" cy="370" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+  <circle cx="316" cy="316" r="22" fill="url(#pipGlow)" opacity="0.5"/>
+
+  <!-- Pips bottom half (3) -->
+  <circle cx="196" cy="316" r="16" fill="url(#pip)"/>
+  <circle cx="256" cy="370" r="16" fill="url(#pip)"/>
+  <circle cx="316" cy="316" r="16" fill="url(#pip)"/>
+
+  <!-- ── CORNER DOTS (decorative tile corners) ── -->
+  <circle cx="160" cy="80"  r="4" fill="#7c3aed" opacity="0.5"/>
+  <circle cx="352" cy="80"  r="4" fill="#7c3aed" opacity="0.5"/>
+  <circle cx="160" cy="432" r="4" fill="#7c3aed" opacity="0.5"/>
+  <circle cx="352" cy="432" r="4" fill="#7c3aed" opacity="0.5"/>
+</svg>
